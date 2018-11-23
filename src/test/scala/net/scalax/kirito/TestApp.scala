@@ -60,10 +60,11 @@ object Test05 extends NonStrictKirito {
   implicit val i1Miao = "12348944"
   implicit val i2Miao = 389
   object Aa {
-    implicit val i3Miao = () => Option.empty
+    val i3 = () => Option.empty
+    val i4 = Option(() => 1L)
   }
 
-  case class Abc(i1: String, i2: () => Int, i3: Long = 3L)
+  case class Abc(i1: String, i2: () => Int, i3: Long = 3L, i4: Long = 2L)
 
   val model: () => Abc = nonStrictKirito.effect(nonStrictKirito.singleModel[Abc](Aa).compile).model
 }
