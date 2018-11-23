@@ -92,6 +92,12 @@ Juse wire a actor to Props use `akkaKirito` then define it in poly object is Ok.
 No use to tag it to a special type.
 
 ```scala
+case class I2Actor(i3: Int, i4: Short = 7812: Short) extends Actor {
+  override val receive = {
+    case _ =>
+  }
+}
+
 implicit val i1Miao = "joirhjrjiorthjnt"
 implicit val i3Miao = 8
 object Bb
