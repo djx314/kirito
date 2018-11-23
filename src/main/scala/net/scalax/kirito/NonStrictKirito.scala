@@ -71,7 +71,8 @@ trait NonStrictImplicit {
       override type Target = () => D
       override def wrapRep(base: => RepContentWithDefault[Option[D], D]): () => D = {
         val base1 = base
-        () => base1.rep.getOrElse(base1.defaultValue)
+        () =>
+          base1.rep.getOrElse(base1.defaultValue)
       }
       override def buildRep(base: () => D, oldRep: NonStrictTag[NonStrictImplicit]): NonStrictTag[NonStrictImplicit] =
         new NonStrictTagImpl[NonStrictImplicit](() => (base(), oldRep.func()))
@@ -85,7 +86,8 @@ trait NonStrictImplicit {
       override type Target = () => D
       override def wrapRep(base: => RepContentWithDefault[Option[() => D], D]): () => D = {
         val base1 = base
-        () => base1.rep.map(_.apply).getOrElse(base1.defaultValue)
+        () =>
+          base1.rep.map(_.apply).getOrElse(base1.defaultValue)
       }
       override def buildRep(base: () => D, oldRep: NonStrictTag[NonStrictImplicit]): NonStrictTag[NonStrictImplicit] =
         new NonStrictTagImpl[NonStrictImplicit](() => (base(), oldRep.func()))
@@ -99,7 +101,8 @@ trait NonStrictImplicit {
       override type Target = () => D
       override def wrapRep(base: => RepContentWithDefault[() => Option[D], D]): () => D = {
         val base1 = base
-        () => base1.rep().getOrElse(base1.defaultValue)
+        () =>
+          base1.rep().getOrElse(base1.defaultValue)
       }
       override def buildRep(base: () => D, oldRep: NonStrictTag[NonStrictImplicit]): NonStrictTag[NonStrictImplicit] =
         new NonStrictTagImpl[NonStrictImplicit](() => (base(), oldRep.func()))
@@ -126,7 +129,8 @@ trait NonStrictImplicit {
       override type Target = () => D
       override def wrapRep(base: => RepContentWithDefault[() => D, D]): () => D = {
         val base1 = base
-        () => base1.rep()
+        () =>
+          base1.rep()
       }
       override def buildRep(base: () => D, oldRep: NonStrictTag[NonStrictImplicit]): NonStrictTag[NonStrictImplicit] =
         new NonStrictTagImpl[NonStrictImplicit](() => (base(), oldRep.func()))
@@ -135,18 +139,50 @@ trait NonStrictImplicit {
     }
 
   implicit def implicit11[D](
-      implicit model: () => D = () => null.asInstanceOf[D]
+      implicit model: ProImplicit[D] = null.asInstanceOf[ProImplicit[D]]
   ): DecoderShape.Aux[RepContentWithDefault[Placeholder[D], D], D, () => D, NonStrictTag[NonStrictImplicit], (Any, Any)] =
     new DecoderShape[RepContentWithDefault[Placeholder[D], D], NonStrictTag[NonStrictImplicit], (Any, Any)] {
       override type Data   = D
       override type Target = () => D
-      override def wrapRep(base: => RepContentWithDefault[Placeholder[D], D]): () => D = Option(model).getOrElse(() => base.defaultValue)
+      override def wrapRep(base: => RepContentWithDefault[Placeholder[D], D]): () => D =
+        Option(model)
+          .map {
+            case m: StrictProImplicit[D] =>
+              () =>
+                m.model
+            case r: NonStrictProImplicit[D] => r.func
+          }
+          .getOrElse(() => base.defaultValue)
       override def buildRep(base: () => D, oldRep: NonStrictTag[NonStrictImplicit]): NonStrictTag[NonStrictImplicit] =
         new NonStrictTagImpl[NonStrictImplicit](() => (base(), oldRep.func()))
       override def takeData(rep: () => D, oldData: (Any, Any)): SplitData[D, (Any, Any)] =
         SplitData(current = oldData._1.asInstanceOf[D], left = oldData._2.asInstanceOf[(Any, Any)])
     }
 
+}
+
+sealed trait ProImplicit[D]
+
+object ProImplicit {
+  implicit def implicit1[D](implicit m: D): ProImplicit[D] = {
+    new StrictProImplicit[D] {
+      override val model = m
+    }
+  }
+
+  implicit def implicit2[D](implicit m: () => D): ProImplicit[D] = {
+    new NonStrictProImplicit[D] {
+      override val func = m
+    }
+  }
+}
+
+trait StrictProImplicit[D] extends ProImplicit[D] {
+  val model: D
+}
+
+trait NonStrictProImplicit[D] extends ProImplicit[D] {
+  val func: () => D
 }
 
 object NonStrictImplicit extends NonStrictImplicit

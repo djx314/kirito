@@ -39,7 +39,7 @@ trait StrictImplicit {
     }
 
   implicit def implicit4[D](
-    implicit model: D = null.asInstanceOf[D]
+      implicit model: D = null.asInstanceOf[D]
   ): DecoderShape.Aux[RepContentWithDefault[Placeholder[D], D], D, D, StrictTag[StrictImplicit], (Any, Any)] =
     new DecoderShape[RepContentWithDefault[Placeholder[D], D], StrictTag[StrictImplicit], (Any, Any)] {
       override type Data   = D
