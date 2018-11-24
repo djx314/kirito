@@ -1,4 +1,4 @@
-package net.scalax.kirito
+package net.scalax.kirito.impl
 
 import akka.actor.Props
 import net.scalax.asuna.core.common.Placeholder
@@ -62,20 +62,16 @@ trait AkkaTag[Poly] {
 
 class AkkaTagImpl[Poly](override val param: List[Any]) extends AkkaTag[Poly]
 
-trait AkkaKirito {
+trait AkkaInjectModel[Out, Data] extends DecoderContent[Out, Data] {
+  def model(implicit classTag: ClassTag[Data]): Props
+}
 
-  trait AkkaInjectModel[Out, Data] extends DecoderContent[Out, Data] {
-    def model(implicit classTag: ClassTag[Data]): Props
-  }
-
-  object akkaKirito extends DecoderWrapperHelper[AkkaTag[AkkaImplicit], (Any, Any), AkkaInjectModel] {
-    override def effect[Rep, D, Out](rep: Rep)(implicit shape: Aux[Rep, D, Out, AkkaTag[AkkaImplicit], (Any, Any)]): AkkaInjectModel[Out, D] = {
-      val shape1 = shape
-      new AkkaInjectModel[Out, D] {
-        override def model(implicit classTag: ClassTag[D]): Props =
-          Props(classTag.runtimeClass, shape1.buildRep(shape1.wrapRep(rep), new AkkaTagImpl(List.empty)).param: _*)
-      }
+object akkaKiritoImpl extends DecoderWrapperHelper[AkkaTag[AkkaImplicit], (Any, Any), AkkaInjectModel] {
+  override def effect[Rep, D, Out](rep: Rep)(implicit shape: Aux[Rep, D, Out, AkkaTag[AkkaImplicit], (Any, Any)]): AkkaInjectModel[Out, D] = {
+    val shape1 = shape
+    new AkkaInjectModel[Out, D] {
+      override def model(implicit classTag: ClassTag[D]): Props =
+        Props(classTag.runtimeClass, shape1.buildRep(shape1.wrapRep(rep), new AkkaTagImpl(List.empty)).param: _*)
     }
   }
-
 }

@@ -1,4 +1,4 @@
-package net.scalax.kirito
+package net.scalax.kirito.impl
 
 import net.scalax.asuna.core.common.Placeholder
 import net.scalax.asuna.core.decoder.DecoderShape.Aux
@@ -55,19 +55,15 @@ object StrictImplicit extends StrictImplicit
 
 trait StrictTag[Poly]
 
-trait StrictKirito {
+trait InjectModel[Out, Data] extends DecoderContent[Out, Data] {
+  def model: Data
+}
 
-  trait InjectModel[Out, Data] extends DecoderContent[Out, Data] {
-    def model: Data
-  }
-
-  object strictKirito extends DecoderWrapperHelper[StrictTag[StrictImplicit], (Any, Any), InjectModel] {
-    override def effect[Rep, D, Out](rep: Rep)(implicit shape: Aux[Rep, D, Out, StrictTag[StrictImplicit], (Any, Any)]): InjectModel[Out, D] = {
-      val shape1 = shape
-      new InjectModel[Out, D] {
-        override def model: D = shape1.takeData(shape1.wrapRep(rep), null).current
-      }
+object strictKiritoImpl extends DecoderWrapperHelper[StrictTag[StrictImplicit], (Any, Any), InjectModel] {
+  override def effect[Rep, D, Out](rep: Rep)(implicit shape: Aux[Rep, D, Out, StrictTag[StrictImplicit], (Any, Any)]): InjectModel[Out, D] = {
+    val shape1 = shape
+    new InjectModel[Out, D] {
+      override def model: D = shape1.takeData(shape1.wrapRep(rep), null).current
     }
   }
-
 }

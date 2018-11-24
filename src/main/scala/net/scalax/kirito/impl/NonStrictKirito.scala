@@ -1,4 +1,4 @@
-package net.scalax.kirito
+package net.scalax.kirito.impl
 
 import net.scalax.asuna.core.common.Placeholder
 import net.scalax.asuna.core.decoder.DecoderShape.Aux
@@ -71,8 +71,7 @@ trait NonStrictImplicit {
       override type Target = () => D
       override def wrapRep(base: => RepContentWithDefault[Option[D], D]): () => D = {
         val base1 = base
-        () =>
-          base1.rep.getOrElse(base1.defaultValue)
+        () => base1.rep.getOrElse(base1.defaultValue)
       }
       override def buildRep(base: () => D, oldRep: NonStrictTag[NonStrictImplicit]): NonStrictTag[NonStrictImplicit] =
         new NonStrictTagImpl[NonStrictImplicit](() => (base(), oldRep.func()))
@@ -86,8 +85,7 @@ trait NonStrictImplicit {
       override type Target = () => D
       override def wrapRep(base: => RepContentWithDefault[Option[() => D], D]): () => D = {
         val base1 = base
-        () =>
-          base1.rep.map(_.apply).getOrElse(base1.defaultValue)
+        () => base1.rep.map(_.apply).getOrElse(base1.defaultValue)
       }
       override def buildRep(base: () => D, oldRep: NonStrictTag[NonStrictImplicit]): NonStrictTag[NonStrictImplicit] =
         new NonStrictTagImpl[NonStrictImplicit](() => (base(), oldRep.func()))
@@ -101,8 +99,7 @@ trait NonStrictImplicit {
       override type Target = () => D
       override def wrapRep(base: => RepContentWithDefault[() => Option[D], D]): () => D = {
         val base1 = base
-        () =>
-          base1.rep().getOrElse(base1.defaultValue)
+        () => base1.rep().getOrElse(base1.defaultValue)
       }
       override def buildRep(base: () => D, oldRep: NonStrictTag[NonStrictImplicit]): NonStrictTag[NonStrictImplicit] =
         new NonStrictTagImpl[NonStrictImplicit](() => (base(), oldRep.func()))
@@ -129,8 +126,7 @@ trait NonStrictImplicit {
       override type Target = () => D
       override def wrapRep(base: => RepContentWithDefault[() => D, D]): () => D = {
         val base1 = base
-        () =>
-          base1.rep()
+        () => base1.rep()
       }
       override def buildRep(base: () => D, oldRep: NonStrictTag[NonStrictImplicit]): NonStrictTag[NonStrictImplicit] =
         new NonStrictTagImpl[NonStrictImplicit](() => (base(), oldRep.func()))
@@ -148,8 +144,7 @@ trait NonStrictImplicit {
         Option(model)
           .map {
             case m: StrictProImplicit[D] =>
-              () =>
-                m.model
+              () => m.model
             case r: NonStrictProImplicit[D] => r.func
           }
           .getOrElse(() => base.defaultValue)
@@ -193,22 +188,18 @@ trait NonStrictTag[Poly] {
 
 class NonStrictTagImpl[Poly](override val func: () => (Any, Any)) extends NonStrictTag[Poly]
 
-trait NonStrictKirito {
+trait NonStrictInjectModel[Out, Data] extends DecoderContent[Out, Data] {
+  def model: () => Data
+}
 
-  trait NonStrictInjectModel[Out, Data] extends DecoderContent[Out, Data] {
-    def model: () => Data
-  }
-
-  object nonStrictKirito extends DecoderWrapperHelper[NonStrictTag[NonStrictImplicit], (Any, Any), NonStrictInjectModel] {
-    override def effect[Rep, D, Out](rep: Rep)(implicit shape: Aux[Rep, D, Out, NonStrictTag[NonStrictImplicit], (Any, Any)]): NonStrictInjectModel[Out, D] = {
-      val shape1  = shape
-      val wrapRep = shape1.wrapRep(rep)
-      val repCol  = shape1.buildRep(wrapRep, new NonStrictTagImpl[NonStrictImplicit](() => null))
-      val model1  = () => shape1.takeData(wrapRep, repCol.func()).current
-      new NonStrictInjectModel[Out, D] {
-        override val model: () => D = model1
-      }
+object nonStrictKiritoImpl extends DecoderWrapperHelper[NonStrictTag[NonStrictImplicit], (Any, Any), NonStrictInjectModel] {
+  override def effect[Rep, D, Out](rep: Rep)(implicit shape: Aux[Rep, D, Out, NonStrictTag[NonStrictImplicit], (Any, Any)]): NonStrictInjectModel[Out, D] = {
+    val shape1  = shape
+    val wrapRep = shape1.wrapRep(rep)
+    val repCol  = shape1.buildRep(wrapRep, new NonStrictTagImpl[NonStrictImplicit](() => null))
+    val model1  = () => shape1.takeData(wrapRep, repCol.func()).current
+    new NonStrictInjectModel[Out, D] {
+      override val model: () => D = model1
     }
   }
-
 }
